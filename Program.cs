@@ -59,6 +59,21 @@ namespace RKSM_5
                     Date = DateTime.Parse(Console.ReadLine());
                     ExcelWork.DeleteRowCell(ClassName, Date);
                     break;
+                case 5:
+                    Console.WriteLine("\nChoose column for sorting:");
+                    Console.WriteLine("\nA - for Class Name\tB - for Student Count\nC - for Date\tD - for Group");
+                    Console.Write("Your choice: \t");
+                    string Path = Console.ReadLine();
+                    Console.Write("Ascending? (Yes or No): \t");
+                    string AscResponse = Console.ReadLine();
+                    AscResponse.ToLower(); 
+                    bool Ascending = true;
+                    if (AscResponse == "no")
+                    {
+                        Ascending = false;
+                    }
+                    ExcelWork.SortData(Path, Ascending);
+                    break;
                 default:
                     break;
             }
@@ -171,7 +186,7 @@ namespace RKSM_5
             Excel.Application xlApp = new Excel.Application();
 
             Excel.Workbook xlWorkBook = xlApp.Workbooks.Open(filePath, 0, false, 5, "", "", false,
-                Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "", true, false, 0, true, false, false);
+                Excel.XlPlatform.xlWindows, "", true, false, 0, true, false, false);
             Excel.Worksheet xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
 
             Excel.Range xlRange = xlWorkSheet.UsedRange;
@@ -286,6 +301,59 @@ namespace RKSM_5
             }
             Console.BackgroundColor = ConsoleColor.DarkBlue;
             Console.WriteLine("\nExcel File has been updated!");
+            Console.BackgroundColor = ConsoleColor.Black;
+            xlApp.DisplayAlerts = false;
+            xlWorkBook.SaveAs(filePath, Excel.XlFileFormat.xlOpenXMLWorkbook,
+                Missing.Value, Missing.Value, Missing.Value, Missing.Value, Excel.XlSaveAsAccessMode.xlNoChange,
+                Excel.XlSaveConflictResolution.xlLocalSessionChanges, Missing.Value, Missing.Value,
+                Missing.Value, Missing.Value);
+            xlWorkBook.Close();
+            xlApp.Quit();
+
+            Marshal.ReleaseComObject(xlWorkSheet);
+            Marshal.ReleaseComObject(xlWorkBook);
+            Marshal.ReleaseComObject(xlApp);
+        }
+
+
+        public static void SortData(string Path, bool Ascending = true)
+        {
+            if (!System.IO.File.Exists(filePath))
+            {
+                Console.WriteLine("\nFile doesn't find. ");
+                Console.WriteLine("\nCreating new Excel file...");
+                CreateExcelFile();
+            }
+
+            Console.BackgroundColor = ConsoleColor.DarkBlue;
+            Console.WriteLine("\nReading the Excel File...");
+            Console.BackgroundColor = ConsoleColor.Black;
+
+            Excel.Application xlApp = new Excel.Application();
+            Excel.Workbook xlWorkBook = xlApp.Workbooks.Open(filePath);
+            Excel.Worksheet xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
+
+            xlWorkSheet.UsedRange.Select();
+            xlWorkSheet.Sort.SortFields.Clear();
+            if (Ascending == true)
+            {
+                xlWorkSheet.Sort.SortFields.Add(xlWorkSheet.UsedRange.Columns[Path], Excel.XlSortOn.xlSortOnValues, Excel.XlSortOrder.xlAscending, System.Type.Missing, Excel.XlSortDataOption.xlSortNormal);
+            }
+            else
+            {
+                xlWorkSheet.Sort.SortFields.Add(xlWorkSheet.UsedRange.Columns[Path], Excel.XlSortOn.xlSortOnValues, Excel.XlSortOrder.xlDescending, System.Type.Missing, Excel.XlSortDataOption.xlSortNormal);
+            }
+
+            var sort = xlWorkSheet.Sort;
+            sort.SetRange(xlWorkSheet.UsedRange);
+            sort.Header = Excel.XlYesNoGuess.xlYes;
+            sort.MatchCase = false;
+            sort.Orientation = Excel.XlSortOrientation.xlSortColumns;
+            sort.SortMethod = Excel.XlSortMethod.xlPinYin;
+            sort.Apply();
+
+            Console.BackgroundColor = ConsoleColor.DarkBlue;
+            Console.WriteLine("\nExcel File has been sorted!");
             Console.BackgroundColor = ConsoleColor.Black;
             xlApp.DisplayAlerts = false;
             xlWorkBook.SaveAs(filePath, Excel.XlFileFormat.xlOpenXMLWorkbook,
