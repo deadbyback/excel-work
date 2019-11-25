@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
-/*
- using Excel = Microsoft.Office.Interop.Excel;
-     */
+using Excel = Microsoft.Office.Interop.Excel;
+
 
 namespace RKSM_5
 {
@@ -15,12 +14,54 @@ namespace RKSM_5
         static void Main(string[] args)
         {
             ExcelWork = new ExcelWork();
-            ExcelWork.CreateExcelFile();
-            ExcelWork.ReadExcelFile();
-            ExcelWork.AddNewRowsToExcelFile();
-            ExcelWork.ReadExcelFile();
-            ExcelWork.DeleteRowCellFromExcelFile();
-            ExcelWork.ReadExcelFile();
+            Console.WriteLine("\nMake your choice:");
+            int choice = Convert.ToInt32(Console.ReadLine());
+            switch (choice)
+            {
+                case 1:
+                    Console.WriteLine("\nFill it:");
+                    ExcelWork.ReadExcelFile();
+                    break;
+                case 2:
+                    Console.WriteLine("\nFill it:");
+                    Console.Write("Class Name:\t");
+                    string ClassName = Convert.ToString(Console.ReadLine());
+                    Console.Write("Date in format dd.MM.yyyy:\t");
+                    DateTime Date = DateTime.Parse(Console.ReadLine());
+                    Console.WriteLine("\nNow fill a new data:");
+                    Console.Write("Class Name:\t");
+                    string NewClassName = Convert.ToString(Console.ReadLine());
+                    Console.Write("Student Count:\t");
+                    int NewStudentCount = Convert.ToInt32(Console.ReadLine());
+                    Console.Write("Date in format dd.MM.yyyy:\t");
+                    DateTime NewDate = DateTime.Parse(Console.ReadLine());
+                    Console.Write("Group:\t");
+                    string NewGroup = Convert.ToString(Console.ReadLine());
+                    ExcelWork.UpdateRowCell(ClassName, Date, NewClassName, NewStudentCount, NewDate, NewGroup);
+                    break;
+                case 3:
+                    Console.WriteLine("\nFill it:");
+                    Console.Write("Class Name:\t");
+                    ClassName = Convert.ToString(Console.ReadLine());
+                    Console.Write("Student Count:\t");
+                    int StudentCount = Convert.ToInt32(Console.ReadLine());
+                    Console.Write("Date:\t");
+                    Date = DateTime.Now;
+                    Console.Write("Group:\t");
+                    string Group = Convert.ToString(Console.ReadLine());
+                    ExcelWork.AddNewRowToExcelFile(ClassName, StudentCount, Date, Group);
+                    break;
+                case 4:
+                    Console.WriteLine("\nFill it:");
+                    Console.Write("Class Name:\t");
+                    ClassName = Convert.ToString(Console.ReadLine());
+                    Console.Write("Date in format dd.MM.yyyy:\t");
+                    Date = DateTime.Parse(Console.ReadLine());
+                    ExcelWork.DeleteRowCell(ClassName, Date);
+                    break;
+                default:
+                    break;
+            }
             Console.Read();
         }
     }
@@ -71,6 +112,13 @@ namespace RKSM_5
 
         public static void ReadExcelFile()
         {
+            if (!System.IO.File.Exists(filePath))
+            {
+                Console.WriteLine("\nFile doesn't find. ");
+                Console.WriteLine("\nCreating new Excel file...");
+                CreateExcelFile();
+            }
+
             Console.BackgroundColor = ConsoleColor.DarkBlue;
             Console.WriteLine("\nReading the Excel File...");
             Console.BackgroundColor = ConsoleColor.Black;
@@ -83,15 +131,16 @@ namespace RKSM_5
             int totalRows = xlRange.Rows.Count;
             int totalColumns = xlRange.Columns.Count;
 
-            string firstValue, secondValue, thirdValue, forthValue;
+            string firstValue, secondValue, forthValue;
+            int thirdValue;
 
             for (int rowCount = 1; rowCount <= totalRows; rowCount++)
             {
 
                 firstValue = Convert.ToString((xlRange.Cells[rowCount, 1] as Excel.Range).Text);
-                secondValue = Convert.ToString((xlRange.Cells[rowCount, 2] as Excel.Range).Text);
-                thirdValue = Convert.ToString((xlRange.Cells[rowCount, 2] as Excel.Range).Text);
-                forthValue = Convert.ToString((xlRange.Cells[rowCount, 2] as Excel.Range).Text);
+                secondValue = Convert.ToInt32((xlRange.Cells[rowCount, 2] as Excel.Range).Text);
+                thirdValue = Convert.ToDateTime((xlRange.Cells[rowCount, 3] as Excel.Range).Text);
+                forthValue = Convert.ToString((xlRange.Cells[rowCount, 4] as Excel.Range).Text);
 
                 Console.WriteLine(firstValue + "\t" + secondValue + "\t" + thirdValue + "\t" + forthValue);
 
@@ -107,13 +156,8 @@ namespace RKSM_5
             Console.WriteLine("End of the file...");
         }
 
-        public static void AddNewRowsToExcelFile(string ClassName, int StudentCount, DateTime Date, string Group)
+        public static void AddNewRowToExcelFile(string ClassName, int StudentCount, DateTime Date, string Group)
         {
-            //        IList<Attend> List = new List<Attend>() {
-            //    new Attend(){ ID=1003, Name="Indraneel"},
-            //    new Attend(){ ID=1004, Name="Neelohith"},
-            //    new Attend(){ ID=1005, Name="Virat"}
-            //};
             IList<Attend> List = new List<Attend>()
             {
                 new Attend(){
@@ -142,7 +186,6 @@ namespace RKSM_5
                 rowNumber++;
             }
 
-            // Disable file override confirmaton message  
             xlApp.DisplayAlerts = false;
             xlWorkBook.SaveAs(filePath, Excel.XlFileFormat.xlOpenXMLWorkbook,
                 Missing.Value, Missing.Value, Missing.Value, Missing.Value, Excel.XlSaveAsAccessMode.xlNoChange,
@@ -156,34 +199,94 @@ namespace RKSM_5
             Marshal.ReleaseComObject(xlApp);
 
             Console.BackgroundColor = ConsoleColor.DarkBlue;
-            Console.WriteLine("\nRecords Added successfully...");
+            Console.WriteLine("\nRecord added successfully...");
             Console.BackgroundColor = ConsoleColor.Black;
         }
 
-        public static void DeleteRowCellFromExcelFile()
+        public static void UpdateRowCell(string oldClassName, DateTime oldDate, string newClassName, int newStudentCount, DateTime newDate, string newGroup)
         {
+            if (!System.IO.File.Exists(filePath))
+            {
+                Console.WriteLine("\nFile doesn't find. ");
+                Console.WriteLine("\nCreating new Excel file...");
+                CreateExcelFile();
+            }
+
             Console.BackgroundColor = ConsoleColor.DarkBlue;
-            Console.WriteLine("\nDeleting the Records...");
+            Console.WriteLine("\nReading the Excel File...");
             Console.BackgroundColor = ConsoleColor.Black;
 
             Excel.Application xlApp = new Excel.Application();
-
-            Excel.Workbook xlWorkBook = xlApp.Workbooks.Open(filePath, 0, false, 5, "", "", false,
-                Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "", true, false, 0, true, false, false);
+            Excel.Workbook xlWorkBook = xlApp.Workbooks.Open(filePath);
             Excel.Worksheet xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
 
-            Excel.Range range1 = xlWorkSheet.get_Range("A2", "B2");
+            Excel.Range xlRange = xlWorkSheet.UsedRange;
+            int totalRows = xlRange.Rows.Count;
 
-            // To Delete Entire Row - below rows will shift up  
-            range1.EntireRow.Delete(Type.Missing);
+            for (int i = 1; i <= totalRows; i++)
+            {
+                Excel.Range ClassName = xlRange.Cells[i, 1] as Excel.Range;
+                Excel.Range Date = xlRange.Cells[i, 3] as Excel.Range;
 
-            Excel.Range range2 = xlWorkSheet.get_Range("B3", "B3");
-            range2.Cells.Clear();
+                if ((string)ClassName.Value2 == oldClassName && (DateTime)Date == oldDate)
+                {
+                    xlRange.Cells[i, 1].Value = newClassName;
+                    xlRange.Cells[i, 2].Value = newStudentCount;
+                    xlRange.Cells[i, 3].Value = newDate;
+                    xlRange.Cells[i, 4].Value = newGroup;
+                }
+            }
 
-            // To Delete Cells - Below cells will shift up  
-            // range2.Cells.Delete(Type.Missing);  
+            Console.BackgroundColor = ConsoleColor.DarkBlue;
+            Console.WriteLine("\nExcel File has been updated!");
+            Console.BackgroundColor = ConsoleColor.Black;
+            xlApp.DisplayAlerts = false;
+            xlWorkBook.SaveAs(filePath, Excel.XlFileFormat.xlOpenXMLWorkbook,
+                Missing.Value, Missing.Value, Missing.Value, Missing.Value, Excel.XlSaveAsAccessMode.xlNoChange,
+                Excel.XlSaveConflictResolution.xlLocalSessionChanges, Missing.Value, Missing.Value,
+                Missing.Value, Missing.Value);
+            xlWorkBook.Close();
+            xlApp.Quit();
 
-            // Disable file override confirmaton message  
+            Marshal.ReleaseComObject(xlWorkSheet);
+            Marshal.ReleaseComObject(xlWorkBook);
+            Marshal.ReleaseComObject(xlApp);
+        }
+
+        public static void DeleteRowCell(string ClassName, DateTime Date)
+        {
+            if (!System.IO.File.Exists(filePath))
+            {
+                Console.WriteLine("\nFile doesn't find. ");
+                Console.WriteLine("\nCreating new Excel file...");
+                CreateExcelFile();
+            }
+
+            Console.BackgroundColor = ConsoleColor.DarkBlue;
+            Console.WriteLine("\nReading the Excel File...");
+            Console.BackgroundColor = ConsoleColor.Black;
+
+            Excel.Application xlApp = new Excel.Application();
+            Excel.Workbook xlWorkBook = xlApp.Workbooks.Open(filePath);
+            Excel.Worksheet xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
+
+            Excel.Range xlRange = xlWorkSheet.UsedRange;
+            int totalRows = xlRange.Rows.Count;
+
+            for (int i = 1; i <= totalRows; i++)
+            {
+                Excel.Range ClassNameCell = xlRange.Cells[i, 1] as Excel.Range;
+                Excel.Range DateCell = xlRange.Cells[i, 3] as Excel.Range;
+
+                if ((string)ClassNameCell.Value2 == ClassName && (DateTime)DateCell == Date)
+                {
+                    Excel.Range range = xlWorkSheet.get_Range("A"+i, "D"+i);
+                    range.EntireRow.Delete(Type.Missing);
+                }
+            }
+            Console.BackgroundColor = ConsoleColor.DarkBlue;
+            Console.WriteLine("\nExcel File has been updated!");
+            Console.BackgroundColor = ConsoleColor.Black;
             xlApp.DisplayAlerts = false;
             xlWorkBook.SaveAs(filePath, Excel.XlFileFormat.xlOpenXMLWorkbook,
                 Missing.Value, Missing.Value, Missing.Value, Missing.Value, Excel.XlSaveAsAccessMode.xlNoChange,
